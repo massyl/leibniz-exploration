@@ -22,7 +22,7 @@ newtype Equal a b = Equal {unEqual :: forall f. f a -> f b}
  Substitute any `a` in `x` by `b`. `y` is `x` with all `a` substituted by `b`
  Given any types `x` and `y` if you know how to turn `x` to `f a` (f type constuctor that take `a` as the last parameter) and you know how to turn `f b` to `y`
 and you know that `a` is equal to `b` (Equal a b) then this function gives you a
-function that turns `x` t0 `y`.
+function that turns `x` to `y`.
 In other words : If you know how to abstract all `a` in x using a type constructor `f` (x <=> f a)  and you know that `a` equal to `b` (Equal a b) then you can
  substitute all `a` in `x` by `b`. We need to convert `x` to `f a` as the only conversion function we hold is (f a -> f b) given by `Equal a b`
 --}
@@ -45,38 +45,87 @@ newtype FlipEqual b a = Flip { unFlip :: Equal a b}
  3. Transitity
 --}
 
+{--
+ Witness that Equal is reflexive (x R x)
+--}
 refl :: Equal a a
 refl = Equal id
 
+{--
+ Witness that Equal is symetric.
+ The get the intuition of this implementation :
+ If we have a witness that a = b (Equal a b), we can replace all `a` in any expression
+ by `b` without changing the meaning of the expression
+ 1. Start with the reflexivity : a = a
+ 2. then change the `a` on the left of sign to get `b = a`
+ As we know to substitute only the last argument of any type constructor we need to flip
+ first (a = a) and then apply our substitution (Equal a b) and the unflip to get our result
+--}
 sym :: Equal a b -> Equal b a
 sym ab = subst Flip unFlip ab $ refl
 
+{--
+ For transivity just compose our substitution functions.
+--}
 trans :: Equal a b -> Equal b c -> Equal a c
 trans (Equal ab) (Equal bc) = Equal $ bc . ab
 
 trans' :: Equal a b -> Equal b c -> Equal a c
 trans' ab bc=  unEqual bc ab
 
+{--
+ Lifts `Equal a b` to `Equal (f a) (f b)` for any type constructor `f`
+--}
 newtype Compose g f a = Comp {unComp :: g (f a)}
 lift :: Equal a b -> Equal (f a) (f b)
 lift  ab = Equal $ subst Comp unComp ab
 
-rewrite :: Equal a b -> Equal c (f a) -> Equal c (f b)
-rewrite ab cfa = trans cfa $ lift ab
+{--
+  If we know that `a = b` and we know that `c = f a` then
+  we can deduce that `c = f b`.
+  For example: If we know that `a = String` and (c = [a]) then we know
+  that (c = [String])
+--}
+substitute :: Equal a b -> Equal c (f a) -> Equal c (f b)
+substitute ab cfa = trans cfa $ lift ab
 
+{--
+  Newtype just to put `f` at the last position in (g (f a)) in
+  order to rich it with our substitution function
+--}
 newtype Gaf g a f = Gaf {unGaf :: g (f a)}
 reshap :: Equal f g -> Equal (f a) (g a)
 reshap fg = Equal $ subst Gaf unGaf fg
 
-rewrite2 :: Equal a b -> Equal c (f a d) -> Equal c (f b d)
-rewrite2 ab cfad = trans cfad $ reshap $ lift ab
+{--
+ Substitutes the first parameter of type constructor with kind
+ (* -> * -> *)
+--}
+substitute2 :: Equal a b -> Equal c (f a d) -> Equal c (f b d)
+substitute2 ab cfad = trans cfad $ reshap $ lift ab
 
-rewrite3 :: Equal a b -> Equal c (f a d e) -> Equal c (f b d e)
-rewrite3 ab cfad = trans cfad $ reshap $ reshap $ lift ab
+{--
+ Substitutes the first parameter of type constructor with kind
+ (* -> * -> * -> *)
+--}
+substitute3 :: Equal a b -> Equal c (f a d e) -> Equal c (f b d e)
+substitute3 ab cfad = trans cfad $ reshap $ reshap $ lift ab
 
+{--
+ Defines a congruence for a given type constructor of kind (* -> * -> *)
+ This can be a congruence for BiFunctor
+--}
 congruence :: Equal a b -> Equal c d -> Equal (f a c) (f b d)
-congruence ab cd = rewrite cd $ rewrite2 ab refl
+congruence ab cd = substitute cd $ substitute2 ab refl
 
+{--
+ Some proofs that can be deducedl
+ x = a -> b
+ y = c -> d
+ a = c
+ b = d
+ => x = y
+--}
 deduce :: Equal x (a -> b)
        -> Equal y (c -> d)
        -> Equal a c
@@ -85,18 +134,3 @@ deduce :: Equal x (a -> b)
 deduce xab ycd ac bd = trans xab $ trans (congruence ac bd) (sym ycd)       
           
 
-  
----------------------------------------------------------------------------------
--- Using subst to express any substitution we want
----------------------------------------------------------------------------------
-
-data Pair a = Pair {unPair :: (a, a)}
-substPair :: Equal a b -> (a, a) -> (b, b)
-substPair = subst Pair unPair
-
-data Middle a b c = Middle {unMiddle :: (a, c, b)}
-substMiddle :: Equal b d -> (a, b, c) -> (a, d, c)
-substMiddle bd = subst Middle unMiddle bd
-
-listRewrite :: Equal a Int -> Equal b [a] -> Equal b [Int]
-listRewrite = rewrite
