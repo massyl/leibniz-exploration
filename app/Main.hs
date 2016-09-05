@@ -1,5 +1,6 @@
 module Main where
 
+import Leibniz (Equal, subst, substitute)
   
 ---------------------------------------------------------------------------------
 -- Using subst to express any substitution we want
@@ -15,3 +16,5 @@ substMiddle bd = subst Middle unMiddle bd
 listRewrite :: Equal a String -> Equal b [a] -> Equal b [String]
 listRewrite = substitute
 
+main :: IO ()
+main = putStrLn "Nothing for now"

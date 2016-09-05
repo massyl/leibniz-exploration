@@ -1,13 +1,10 @@
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE PolyKinds #-}
 
 module Leibniz  where
+import Data.Functor.Identity
 
-data Dynamic rep where {
-(:::) :: a -> rep a -> Dynamic rep
   
-                       }
 {--
   Leibniz type equality encoding. a, b are considered equal if they have the
   same properties.
@@ -133,4 +130,5 @@ deduce :: Equal x (a -> b)
        -> Equal x y
 deduce xab ycd ac bd = trans xab $ trans (congruence ac bd) (sym ycd)       
           
+
 
