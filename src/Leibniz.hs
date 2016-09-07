@@ -1,5 +1,7 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE PolyKinds #-}
+
 
 module Leibniz  where
 import Data.Functor.Identity
@@ -59,7 +61,7 @@ refl = Equal id
  first (a = a) and then apply our substitution (Equal a b) and the unflip to get our result
 --}
 sym :: Equal a b -> Equal b a
-sym ab = subst Flip unFlip ab $ refl
+sym ab = subst Flip unFlip ab refl
 
 {--
  For transivity just compose our substitution functions.
@@ -101,6 +103,7 @@ reshap fg = Equal $ subst Gaf unGaf fg
 substitute2 :: Equal a b -> Equal c (f a d) -> Equal c (f b d)
 substitute2 ab cfad = trans cfad $ reshap $ lift ab
 
+
 {--
  Substitutes the first parameter of type constructor with kind
  (* -> * -> * -> *)
@@ -128,7 +131,30 @@ deduce :: Equal x (a -> b)
        -> Equal a c
        -> Equal b d
        -> Equal x y
-deduce xab ycd ac bd = trans xab $ trans (congruence ac bd) (sym ycd)       
-          
+deduce xab ycd ac bd = trans xab $ trans (congruence ac bd) (sym ycd)
 
+
+-- Making Equal injectivity
+-- Note that we can't achieve it Leibniz.
+-- We use open type family to proof injectivity
+
+type family Fst a :: *
+type instance Fst (f a) = a
+newtype EqualFst a b = EqualFst { unFst :: Equal (Fst a) (Fst b)}
+
+injective :: (Fst (f a) ~ a) => Equal (f a) (g b) -> Equal a b
+injective eq =  subst id unFst eq (EqualFst refl :: EqualFst (f a)(f a))
+
+
+--Note that the first solution is limited as we can't use type synonyms for example
+type family Fst2 a :: *
+type instance Fst2 (f a b) = a
+
+newtype EqualFst2 a b = EqualFst2{unFst2 :: Equal (Fst2 a) (Fst2 b)}
+
+injective' ::(Fst2 (f a b) ~ a) => Equal (f a b) (g c d) -> Equal a c
+injective' eq =  subst id unFst2 eq (EqualFst2 refl :: EqualFst2 (f a b)(f a b))
+
+injectiveArrow :: Equal (a -> b) (c -> d) -> Equal a c
+injectiveArrow = injective'
 
