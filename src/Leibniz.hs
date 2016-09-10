@@ -22,7 +22,7 @@ module Leibniz (
  ) where
 
 import Data.Functor.Identity
-
+import qualified Control.Category as C
   
 {--
   Leibniz type equality encoding. a, b are considered equal if they have the
@@ -87,7 +87,7 @@ trans :: Equal a b -> Equal b c -> Equal a c
 trans (Equal ab) (Equal bc) = Equal $ bc . ab
 
 trans' :: Equal a b -> Equal b c -> Equal a c
-trans' ab bc=  unEqual bc ab
+trans' =  flip unEqual
 
 {--
  Lifts `Equal a b` to `Equal (f a) (f b)` for any type constructor `f`
@@ -174,3 +174,8 @@ injective' eq =  subst id unFst2 eq (EqualFst2 refl :: EqualFst2 (f a b)(f a b))
 injectiveArrow :: Equal (a -> b) (c -> d) -> Equal a c
 injectiveArrow = injective'
 
+instance C.Category Equal where
+  id = refl
+  (.)= flip trans
+
+  
