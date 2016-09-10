@@ -12,7 +12,7 @@ data Dynamic rep where {
   (:::) :: a -> rep a -> Dynamic rep
 }
 
-class MaybeLeibniz rep where {
+class Comparable rep where {
   (<=>) :: rep a -> rep  b -> Maybe (Equal a b)
  }
 
@@ -23,35 +23,42 @@ data TypeRep tpr a  = TypeConst (tpr a)
 
 type Type = TypeRep TypeRepConst                   
 
+
 coerce :: Equal a b
        -> a
        -> b
 coerce = subst Identity runIdentity
 
-fromDynamic :: MaybeLeibniz rep  => rep a
+
+fromDynamic :: Comparable rep  => rep a
             -> Dynamic rep
             -> Maybe a
 fromDynamic expected (a ::: actual) = case actual <=> expected of
                                 Just eq -> return $ coerce eq a
                                 _ -> Nothing
 
-fromDynamic2 :: MaybeLeibniz tpr => tpr a
+
+fromDynamic2 :: Comparable tpr => tpr a
              -> Dynamic tpr
              -> Maybe a
 fromDynamic2 expected (a ::: actual) = fmap (`coerce` a) $ actual <=> expected
 
-instance MaybeLeibniz TypeRepConst where
+
+instance Comparable TypeRepConst where
   Int p1  <=> Int p2  = return $ trans p1 $ sym p2
   Bool p1 <=> Bool p2 = return $ trans p1 $ sym p2
   _ <=> _ = Nothing
 
-instance MaybeLeibniz tpr => MaybeLeibniz (TypeRep tpr) where
+instance Comparable tpr => Comparable (TypeRep tpr) where
   TypeConst x <=> TypeConst y = x <=> y
   List eq1 rep1 <=> List eq2 rep2 = trans eq1 . sym . (`substitute` eq2) <$> rep2 <=> rep1
   Func eqF arg1 res1 <=> Func eqG arg2 res2 = deduce eqF eqG <$> arg1<=>arg2 <*> res1<=>res2
   _ <=> _ = Nothing
 
-    
+infixr 5 .->
+(.->) :: TypeRep tpr a -> TypeRep tpr b -> TypeRep tpr (a -> b)
+tpra .-> tprb = Func refl tpra tprb
+
 intTypeRepConst :: TypeRepConst Int
 intTypeRepConst = Int refl
 
@@ -73,13 +80,8 @@ boolTypeRep = TypeConst boolTypeRepConst
 listRep :: TypeRep tpr a -> TypeRep tpr [a]
 listRep tpa = List refl tpa
 
-infixr 5 .->
-(.->) :: TypeRep tpr a -> TypeRep tpr b -> TypeRep tpr (a -> b)
-tpra .-> tprb = Func refl tpra tprb
-
 intsToBool :: TypeRep TypeRepConst ([Int] -> Bool)
 intsToBool = listRep intTypeRep .-> boolTypeRep
-
 
 plusRep :: TypeRep TypeRepConst (Int -> Int -> Int)
 plusRep = (intTypeRep .-> intTypeRep .-> intTypeRep)
@@ -98,14 +100,13 @@ thirteen = fromJust $ fromDynamic plusRep plus
   <*> fromDynamic intTypeRep twelve
 
 
-dynApply :: MaybeLeibniz tpr => Dynamic (TypeRep tpr)
+dynApply :: Comparable tpr => Dynamic (TypeRep tpr)
          -> Dynamic (TypeRep tpr)
          -> Maybe (Dynamic (TypeRep tpr))
 dynApply (f:::frep) (x:::xrep)= case frep of
                                 Func eqf arg res  ->
                                   (:::res) <$> coerce eqf f <$> (`coerce` x) <$> xrep<=>arg
                                 _ -> Nothing
-
 
 increment :: Dynamic Type
 increment = fromJust $ dynApply plus one
