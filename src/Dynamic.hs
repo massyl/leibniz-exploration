@@ -35,19 +35,10 @@ coerce :: Equal a b
        -> b
 coerce = subst Identity runIdentity
 
-
-fromDynamic :: Comparable rep  => rep a
-            -> Dynamic rep
-            -> Maybe a
-fromDynamic expected (a ::: actual) = case actual <=> expected of
-                                Just eq -> return $ coerce eq a
-                                _ -> Nothing
-
-
-fromDynamic2 :: Comparable tpr => tpr a
+fromDynamic :: Comparable tpr => tpr a
              -> Dynamic tpr
              -> Maybe a
-fromDynamic2 expected (a ::: actual) = fmap (`coerce` a) $ actual <=> expected
+fromDynamic expected (a ::: actual) = (`coerce` a) <$> actual <=> expected
 
 
 instance Comparable TypeRepConst where
