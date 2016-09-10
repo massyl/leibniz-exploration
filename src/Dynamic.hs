@@ -1,11 +1,19 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 
-module Dynamic where
+module Dynamic (
+Dynamic,
+Comparable,
+TypeRepConst,
+TypeRep,
+coerce,
+fromDynamic,
+dynApply
+ ) where
 
-import Leibniz (Equal, Equal(..), subst, refl, sym, trans, substitute, deduce)
+import Leibniz (Equal, subst, refl, sym, trans, substitute, deduce)
 import Data.Functor.Identity
-import Control.Applicative(pure, (<$>), (<*>))
+import Control.Applicative((<$>), (<*>))
 import Data.Maybe (fromJust)
 
 data Dynamic rep where {
@@ -22,8 +30,6 @@ data TypeRep tpr a  = TypeConst (tpr a)
                  | forall x y. Func (Equal a (x -> y)) (TypeRep tpr x) (TypeRep tpr y)
 
 type Type = TypeRep TypeRepConst                   
-
-
 coerce :: Equal a b
        -> a
        -> b

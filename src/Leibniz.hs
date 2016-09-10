@@ -3,7 +3,24 @@
 {-# LANGUAGE PolyKinds #-}
 
 
-module Leibniz  where
+module Leibniz (
+ subst,
+ substitute,
+ substitute2,
+ substitute3,
+ Equal,
+ refl,
+ sym,
+ trans,
+ lift,
+ reshap,
+ congruence,
+ deduce,
+ injective,
+ injective',
+ injectiveArrow
+ ) where
+
 import Data.Functor.Identity
 
   
@@ -144,7 +161,6 @@ newtype EqualFst a b = EqualFst { unFst :: Equal (Fst a) (Fst b)}
 
 injective :: (Fst (f a) ~ a) => Equal (f a) (g b) -> Equal a b
 injective eq =  subst id unFst eq (EqualFst refl :: EqualFst (f a)(f a))
-
 
 --Note that the first solution is limited as we can't use type synonyms for example
 type family Fst2 a :: *
