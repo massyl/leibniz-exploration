@@ -28,6 +28,7 @@ module Dynamic (
 
 import Leibniz (Equal, subst, refl, sym, trans, substitute, deduce)
 import Data.Functor.Identity
+import Data.Functor(fmap)
 import Control.Applicative((<$>), (<*>))
 import Data.Maybe (fromJust)
 
@@ -114,7 +115,7 @@ dynApply :: Comparable tpr => Dynamic (TypeRep tpr)
          -> Maybe (Dynamic (TypeRep tpr))
 dynApply (f:::frep) (x:::xrep)= case frep of
                                 Func eqf arg res  ->
-                                  (:::res) <$> coerce eqf f <$> (`coerce` x) <$> xrep<=>arg
+                                  (:::res) . coerce eqf f . (`coerce` x) <$> xrep<=>arg
                                 _ -> Nothing
 
 increment :: Dynamic Type
