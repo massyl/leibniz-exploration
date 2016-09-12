@@ -1,6 +1,21 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 
+----------------------------------------------------------------------------------------------------
+-- |
+-- Module      : Dynamic
+-- Copyright   : (C) 2016 Massyl Nait-Mouloud
+-- License     : BSD-style
+--
+-- Maintainer  : Massyl Nait-Mouloud <massil.nait@gmail.com>
+-- Stability   : experimental
+-- Portability : ExistentialQualification, GADTs
+--
+-- Type safe cast of dynamic values represented by Dynamic data type to their types
+-- the paper Typing Dynamic Typing http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.193.1552
+--
+----------------------------------------------------------------------------------------------------
+
 module Dynamic (
 Dynamic,
 Comparable,
@@ -92,10 +107,7 @@ twelve :: Dynamic (TypeRep TypeRepConst)
 twelve = 12 ::: intTypeRep
 
 thirteen :: Int
-thirteen = fromJust $ fromDynamic plusRep plus
-  <*> fromDynamic intTypeRep one
-  <*> fromDynamic intTypeRep twelve
-
+thirteen = fromJust $ fromDynamic plusRep plus <*> fromDynamic intTypeRep one <*> fromDynamic intTypeRep twelve
 
 dynApply :: Comparable tpr => Dynamic (TypeRep tpr)
          -> Dynamic (TypeRep tpr)
