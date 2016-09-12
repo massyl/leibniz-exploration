@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                     #-}
 
 ----------------------------------------------------------------------------------------------------
 -- |
@@ -26,11 +26,12 @@ module Dynamic (
   dynApply
  ) where
 
-import Leibniz (Equal, subst, refl, sym, trans, substitute, deduce)
-import Data.Functor.Identity
-import Data.Functor(fmap)
-import Control.Applicative((<$>), (<*>))
-import Data.Maybe (fromJust)
+import           Control.Applicative   ((<$>), (<*>))
+import           Data.Functor          (fmap)
+import           Data.Functor.Identity
+import           Data.Maybe            (fromJust)
+import           Leibniz               (Equal, deduce, refl, subst, substitute,
+                                        sym, trans)
 
 data Dynamic rep where {
   (:::) :: a -> rep a -> Dynamic rep
@@ -45,7 +46,7 @@ data TypeRep tpr a  = TypeConst (tpr a)
                  | forall x. List (Equal a [x])(TypeRep tpr x)
                  | forall x y. Func (Equal a (x -> y)) (TypeRep tpr x) (TypeRep tpr y)
 
-type Type = TypeRep TypeRepConst                   
+type Type = TypeRep TypeRepConst
 coerce :: Equal a b
        -> a
        -> b
@@ -114,8 +115,7 @@ dynApply :: Comparable tpr => Dynamic (TypeRep tpr)
          -> Dynamic (TypeRep tpr)
          -> Maybe (Dynamic (TypeRep tpr))
 dynApply (f:::frep) (x:::xrep)= case frep of
-                                Func eqf arg res  ->
-                                  (:::res) . coerce eqf f . (`coerce` x) <$> xrep<=>arg
+                                Func eqf arg res  -> (:::res) . coerce eqf f . (`coerce` x) <$> xrep<=>arg
                                 _ -> Nothing
 
 increment :: Dynamic Type
