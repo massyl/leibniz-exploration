@@ -17,13 +17,13 @@
 ----------------------------------------------------------------------------------------------------
 
 module Dynamic (
-Dynamic,
-Comparable,
-TypeRepConst,
-TypeRep,
-coerce,
-fromDynamic,
-dynApply
+  Dynamic,
+  Comparable,
+  TypeRepConst,
+  TypeRep,
+  coerce,
+  fromDynamic,
+  dynApply
  ) where
 
 import Leibniz (Equal, subst, refl, sym, trans, substitute, deduce)
